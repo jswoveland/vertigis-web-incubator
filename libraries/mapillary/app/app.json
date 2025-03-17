@@ -4,12 +4,13 @@
         {
             "$type": "map-extension",
             "id": "map-config-1",
-            "webScene": "https://www.arcgis.com/home/item.html?id=94e00add11334767afb0abdce49c9a43"
+            "webMap": "https://demo.studio.vertigisapps.com/portal/home/item.html?id=7de3cd768073480382d3a52c64cc1e22"
         },
         {
             "$type": "mapillary",
             "id": "mapillary-config-1",
-            "mapillaryKey": "MLY|4371038552987952|3051b8de90b9a19c55ba2e5edd9376db"
+            "mapillaryKey": "MLY|23931681156467665|c061aa620dfad190870e8242821eaa95",
+            "startSynced": true
         }
     ]
 }

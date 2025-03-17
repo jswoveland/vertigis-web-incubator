@@ -21,7 +21,7 @@ export default function Mapillary(
 ): ReactElement {
     const { model } = props;
     const mlyRootEl = useRef<HTMLDivElement>();
-
+    // const imageId = "2935399116683438";
     const onSyncToggle = () =>
         (model.synchronizePosition = !model.synchronizePosition);
     const onRecenter = () => model.recenter();
@@ -30,7 +30,7 @@ export default function Mapillary(
 
     useEffect(() => {
         const mapillary = new Viewer({
-            imageId: "2935399116683438",
+            imageId: null,
             container: mlyRootEl.current,
             accessToken: model.mapillaryKey,
             component: {
@@ -53,31 +53,31 @@ export default function Mapillary(
         // These handlers are necessary as Mapillary cannot handle the many
         // update events caused by dragging the location marker. We'll only
         // handle the last one fired when the mouse button is released.
-        const mouseDownHandler = (): void =>
-            (model.currentMarkerPosition = undefined);
-        const mouseUpHandler = (): void => {
-            if (
-                model.mapillary?.isNavigable &&
-                !model.updating &&
-                model.currentMarkerPosition
-            ) {
-                model.updating = true;
+        // const mouseDownHandler = (): void =>
+        //     (model.currentMarkerPosition = undefined);
+        // const mouseUpHandler = (): void => {
+        //     if (
+        //         model.mapillary?.isNavigable &&
+        //         !model.updating &&
+        //         model.currentMarkerPosition
+        //     ) {
+        //         model.updating = true;
 
-                // const { latitude, longitude } = model.currentMarkerPosition;
-                model.currentMarkerPosition = undefined;
-
-                // See comment in MapillaryModel.ts
-                // void model.moveCloseToPosition(latitude, longitude);
-            }
-        };
-        document.body.addEventListener("mousedown", mouseDownHandler);
-        document.body.addEventListener("mouseup", mouseUpHandler);
+        //         const { latitude, longitude } = model.currentMarkerPosition;
+        //         model.currentMarkerPosition = undefined;
+        //         // See comment in MapillaryModel.ts
+        //         // eslint-disable-next-line no-void
+        //         void  model.moveCloseToPosition(latitude, longitude);
+        //     }
+        // };
+        // document.body.addEventListener("mousedown", mouseDownHandler);
+        // document.body.addEventListener("mouseup", mouseUpHandler);
 
         // Clean up when this component is unmounted from the DOM.
         return () => {
             // Remove listeners.
-            document.body.removeEventListener("mousedown", mouseDownHandler);
-            document.body.removeEventListener("mouseup", mouseUpHandler);
+            // document.body.removeEventListener("mousedown", mouseDownHandler);
+            //    document.body.removeEventListener("mouseup", mouseUpHandler);
             resizeObserver.unobserve(viewportDiv);
 
             // Clear out the Mapillary instance property. This will take care of

@@ -88,16 +88,28 @@ export default class MapillaryModel extends ComponentModelBase<MapillaryModelPro
                 maps: this.map,
             }),
             this.synchronizePosition
-                ? this.messages.commands.map.zoomToViewpoint.execute({
-                      maps: this.map,
-                      viewpoint: {
-                          rotation: getCameraRotationFromBearing(heading),
-                          targetGeometry: centerPoint,
-                          scale: this.defaultScale,
-                      },
-                  })
+                ? () => {
+                      try {
+                          return this.messages.commands.map.zoomToViewpoint.execute(
+                              {
+                                  maps: this.map,
+                                  viewpoint: {
+                                      rotation:
+                                          getCameraRotationFromBearing(heading),
+                                      targetGeometry: centerPoint,
+                                      scale: this.defaultScale,
+                                  },
+                              }
+                          );
+                      } catch (e) {
+                          return null;
+                      }
+                  }
                 : undefined,
-        ]).finally(() => (this.updating = false));
+        ]).finally(() => {
+            this.updating = false;
+            this._handleMarkerUpdate = true;
+        });
     }, 128);
 
     private _mapillary: IViewer | undefined;
@@ -137,8 +149,15 @@ export default class MapillaryModel extends ComponentModelBase<MapillaryModelPro
                 this.messages.events.locationMarker.updated.subscribe((event) =>
                     this._handleViewerUpdate(event)
                 );
-        }
 
+            // move the viewer to the closest image
+            this.moveCloseToPosition(
+                this.map.extent.center.latitude,
+                this.map.extent.center.longitude
+            )
+                .then(() => {})
+                .catch(() => {});
+        }
         // We may need to sync if the map and initialized view have arrived first.
         if (!this._synced && this.map.view) {
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -196,23 +215,45 @@ export default class MapillaryModel extends ComponentModelBase<MapillaryModelPro
     // https://forum.mapillary.com/t/web-app-blocked-by-cors-policy-mapillary/5357
     // https://forum.mapillary.com/t/cors-error-when-requesting-coverage-vector-tiles/5303
 
-    // async moveCloseToPosition(latitude: number, longitude: number):
-    // Promise<void> {try {const url =
-    // `https://tiles.mapillary.com/maps/vtp/mly1_public/2/17/${latitude}/${longitude}?access_token=${this.mapillaryKey}`;
-    // const response = await fetch(url); const data = await response.json();
-    // const imgKey = data?.features?.[0]?.properties?.key;
+    async moveCloseToPosition(
+        latitude: number,
+        longitude: number
+    ): Promise<void> {
+        const imgKey: string = await this.getImageIdForCoordinates(
+            latitude,
+            longitude
+        );
 
-    //         if (imgKey) {
-    //             await this.mapillary.moveTo(imgKey);
-    //             this.updating = false;
-    //         } else {
-    //             this.updating = false;
-    //             this._activateCover();
-    //         }
-    //     } catch {
-    //         this.updating = false;
-    //         this._activateCover();
-    //     }
+        if (imgKey) {
+            await this.mapillary.moveTo(imgKey);
+            this.updating = false;
+        } else {
+            this.updating = false;
+            //  this._activateCover();
+        }
+    }
+
+    async getImageIdForCoordinates(lat: number, lon: number): Promise<string> {
+        try {
+            const bbox = `${lon - 0.0005},${lat - 0.0005},${lon + 0.0005},${
+                lat + 0.0005
+            }`;
+            const response = await fetch(
+                `https://graph.mapillary.com/images?access_token=${this.mapillaryKey}&bbox=${bbox}&limit=1`
+            );
+            const data = await response.json();
+
+            if (data.data && data.data.length > 0) {
+                return data.data[0].id;
+            } else {
+                console.error("No images found near the coordinates.");
+                return null;
+            }
+        } catch (error) {
+            console.error("Error fetching image key:", error);
+            return null;
+        }
+    }
 
     protected override async _onDestroy(): Promise<void> {
         await super._onDestroy();
@@ -284,7 +325,7 @@ export default class MapillaryModel extends ComponentModelBase<MapillaryModelPro
                 id: this.id,
                 maps: this.map,
                 // When the CORS issue above is resolved change this to `true`
-                userDraggable: false,
+                userDraggable: true,
             }),
             this.synchronizePosition
                 ? this.messages.commands.map.zoomToViewpoint.execute({
@@ -311,10 +352,15 @@ export default class MapillaryModel extends ComponentModelBase<MapillaryModelPro
     private _handleViewerUpdate(event: any): void {
         if (this._handleMarkerUpdate) {
             const updatePoint = event.geometry as Point;
-            this.currentMarkerPosition = {
-                latitude: updatePoint.latitude,
-                longitude: updatePoint.longitude,
-            };
+            //           this.currentMarkerPosition = {
+            //               latitude: updatePoint.latitude,
+            //               longitude: updatePoint.longitude
+            //           };
+            // eslint-disable-next-line no-void
+            void this.moveCloseToPosition(
+                updatePoint.latitude,
+                updatePoint.longitude
+            );
         }
         this._handleMarkerUpdate = true;
     }
