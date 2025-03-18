@@ -1,4 +1,6 @@
 import Point from "@arcgis/core/geometry/Point";
+import SpatialReference from "@arcgis/core/geometry/SpatialReference";
+import * as apiGeometryUtils from "@vertigis/arcgis-extensions/utilities/geometry";
 import type { MapModel } from "@vertigis/web/mapping";
 import type {
     PropertyDefs,
@@ -151,10 +153,7 @@ export default class MapillaryModel extends ComponentModelBase<MapillaryModelPro
                 );
 
             // move the viewer to the closest image
-            this.moveCloseToPosition(
-                this.map.extent.center.latitude,
-                this.map.extent.center.longitude
-            )
+            this.moveCloseToPosition(this.map.extent.center)
                 .then(() => {})
                 .catch(() => {});
         }
@@ -215,13 +214,21 @@ export default class MapillaryModel extends ComponentModelBase<MapillaryModelPro
     // https://forum.mapillary.com/t/web-app-blocked-by-cors-policy-mapillary/5357
     // https://forum.mapillary.com/t/cors-error-when-requesting-coverage-vector-tiles/5303
 
-    async moveCloseToPosition(
-        latitude: number,
-        longitude: number
-    ): Promise<void> {
+    async moveCloseToPosition(position: Point): Promise<void> {
+        // first check to see if the point is in web mercator. If not, we need to reproject it
+        let pos = position;
+        if (!position.spatialReference.isWebMercator) {
+            // eslint-disable-next-line no-param-reassign
+            const positionResults = await apiGeometryUtils.project(
+                [position],
+                new SpatialReference({ wkid: 3857 })
+            );
+            pos = <Point>positionResults[0];
+        }
+
         const imgKey: string = await this.getImageIdForCoordinates(
-            latitude,
-            longitude
+            pos.latitude,
+            pos.longitude
         );
 
         if (imgKey) {
@@ -357,10 +364,7 @@ export default class MapillaryModel extends ComponentModelBase<MapillaryModelPro
             //               longitude: updatePoint.longitude
             //           };
             // eslint-disable-next-line no-void
-            void this.moveCloseToPosition(
-                updatePoint.latitude,
-                updatePoint.longitude
-            );
+            void this.moveCloseToPosition(updatePoint);
         }
         this._handleMarkerUpdate = true;
     }

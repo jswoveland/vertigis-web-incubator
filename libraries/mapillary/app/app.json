@@ -4,12 +4,12 @@
         {
             "$type": "map-extension",
             "id": "map-config-1",
-            "webMap": "https://demo.studio.vertigisapps.com/portal/home/item.html?id=7de3cd768073480382d3a52c64cc1e22"
+            "webMap": "https://demo.studio.vertigisapps.com/portal/home/item.html?id=ce5f1803ddef45ca8a3ed978f939f2fa"
         },
         {
             "$type": "mapillary",
             "id": "mapillary-config-1",
-            "mapillaryKey": "MLY|23931681156467665|c061aa620dfad190870e8242821eaa95",
+            "mapillaryKey": "MLY|23931681156467665|c061aa620dfad190870e8242",
             "startSynced": true
         }
     ]

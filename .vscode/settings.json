@@ -12,7 +12,8 @@
         "serializable",
         "unsync",
         "unsynced",
-        "vertigis"
+        "vertigis",
+        "wkid"
     ],
     "eslint.workingDirectories": [{ "pattern": "./libraries/*/" }]
 }
